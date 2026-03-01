@@ -69,24 +69,16 @@ def execute_python_code(code: str) -> Dict[str, Any]:
 class ErrorAnalysis(BaseModel):
     error_lines: List[int]
 
-
 def _fallback_extract_lines(tb_text: str) -> List[int]:
     import re
 
-    found = []
-    for m in re.finditer(r'File "<string>", line (\d+)', tb_text):
-        found.append(int(m.group(1)))
+    matches = re.findall(r'File "<string>", line (\d+)', tb_text)
 
-    # Deduplicate while preserving order
-    seen = set()
-    uniq = []
-    for x in found:
-        if x not in seen:
-            seen.add(x)
-            uniq.append(x)
+    if not matches:
+        return []
 
-    return uniq
-
+    # Return ONLY the last traceback frame (actual error line)
+    return [int(matches[-1])]
 
 def analyze_error_with_ai(code: str, tb_text: str) -> List[int]:
     api_key = os.environ.get("GEMINI_API_KEY")
